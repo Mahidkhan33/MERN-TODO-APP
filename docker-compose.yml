@@ -4,40 +4,47 @@ services:
   mongodb:
     image: mongo:6.0
     container_name: todo-mongodb
-    ports:
-      - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
-    build: 
-      context: ./backend
+    build:
+      context: ./todoBackend
       dockerfile: Dockerfile
     container_name: todo-backend
-    ports:
-      - "5000:5000"
     environment:
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/todoapp?authSource=admin
       - JWT_SECRET=your_jwt_secret_key_for_docker
       - NODE_ENV=production
+    ports:
+      - "5000:5000"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
     build:
-      context: ./frontend
+      context: ./todoFrontend
       dockerfile: Dockerfile
     container_name: todo-frontend
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
     ports:
       - "3000:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:5000
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
