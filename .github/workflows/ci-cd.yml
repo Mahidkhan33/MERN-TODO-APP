@@ -8,8 +8,6 @@ on:
 
 jobs:
 
-  # Removed validate-dockerfiles job entirely
-
   build-and-test:
     runs-on: ubuntu-latest
 
